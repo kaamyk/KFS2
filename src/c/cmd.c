@@ -2,48 +2,120 @@
 
 void	reset_cmd( void )
 {
-	memset(cmd_buf, 0, cmd_buf_index);
+	memset(cmd_buf, 0, 256);
 	cmd_buf_index = 0;
 	cmd_complete = 0;
 }
 
-uint32_t	get_gdt_limit( const struct gdt_entry *entry )
+// uint32_t	get_gdt_limit( const struct gdt_entry *entry )
+// {
+// 	return ( (entry->limit_low | (entry->limit_high << 16)) & 0x0FFFFFFF );
+// }
+
+// uintptr_t get_gdt_base( const struct gdt_entry *entry )
+// {
+// 	return ( entry->base_low | (entry->base_middle << 16) | (entry->base_high << 24) );
+// }
+
+void shell_halt( void )
 {
-	return ( (entry->limit_low | (entry->limit_high << 16)) & 0x0FFFFFFF );
+    asm volatile("cli; hlt");
 }
 
-uintptr_t get_gdt_base( const struct gdt_entry *entry )
+void shell_reboot( void )
 {
-	return ( entry->base_low | (entry->base_middle << 16) | (entry->base_high << 24) );
+    unsigned char good = 0x02;
+    while (good & 0x02)
+        good = inb(0x64);
+    outb(0x64, 0xFE);
 }
 
-void	printk( void )
+void shell_clear( void )
 {
-	const uint32_t		limit = get_gdt_limit(gdt + GDT_KSTACK);
-	uint32_t	*k_stack = (void *) get_gdt_base(gdt + GDT_KSTACK);
+    terminal_initialize();
+    update_cursor(0, 0);
+}
 
-	write_itohex((uint32_t)gdt + GDT_KSTACK);
-	terminal_putchar('\n');
-	write_itohex(limit);
+void	stack( void )
+{
+	print_kernel_stack();
+}
+
+void shell_help() {
+    write("Available commands:\n");
+    write(" - halt: Stop CPU\n");
+    write(" - reboot: Reboot PC\n");
+    write(" - stack: Print kernel stack\n");
+    write(" - clear: Clear screen\n");
+    write(" - gdt: Print GDT kernel offsets\n");
+    write(" - help: Show this message\n");
+}
+
+void	print_gdt()
+{
+	write("Kernel Code offset: 0x");
+	uint16_t cs = 0;
+	asm volatile("mov %%cs, %0" : "=r"(cs));
+	write_btohex(cs >> 8);
+	write_btohex(cs & 0xFF);
 	terminal_putchar('\n');
 	
-	for (uint32_t i = 0; i < limit; i += 4)
-		write_itohex(*(k_stack + i));
-	
-	return ;
+	write("Kernel Data offset: 0x");
+	uint16_t ds = 0;
+	asm volatile("mov %%ds, %0" : "=r"(ds));
+	write_btohex(ds >> 8);
+	write_btohex(ds & 0xFF);
+	terminal_putchar('\n');
+
+	write("Kernel Stack offset: 0x");
+	uint16_t ss = 0;
+	asm volatile ("mov %%ss, %0" : "=r"(ss));
+	write_btohex(ss >> 8);
+	write_btohex(ss & 0xFF);
+	terminal_putchar('\n');
 }
 
 void	cmd( void )
 {
-	write(cmd_buf);
 	if (cmd_buf_index == 0)
+	{
+		// terminal_putchar('\n');
+		cmd_complete = 0;
 		return;
+	}
 	switch(cmd_buf[0])
 	{
-		case 'p':
-			write("Command complete\n");
-			if (strncmp(cmd_buf, "printk", 5) == 0)
-				printk();
+		case 'h':
+			if (strncmp(cmd_buf, "halt\0", 5) == 0)
+				shell_halt();
+			else if (strncmp(cmd_buf, "help\0", 5) == 0)
+				shell_help();
+			else
+				write("Command not found\n");
+			break ;
+		case 'r':
+			if (strncmp(cmd_buf, "reboot\0", 7) == 0)
+				shell_reboot();
+			else
+				write("Command not found\n");
+			break ;
+		case 's':
+			if (strncmp(cmd_buf, "stack\0", 6) == 0)
+				stack();
+			else
+				write("Command not found\n");
+			break ;
+		case 'c':
+			if (strncmp(cmd_buf, "clear\0", 6) == 0)
+				shell_clear();
+			else
+				write("Command not found\n");
+			break ;
+		case 'g':
+			if (strncmp(cmd_buf, "gdt\0", 4) == 0)
+				print_gdt();
+			else
+				write("Command not found\n");
 			break ;
 		default:
 			write("Command not found\n");

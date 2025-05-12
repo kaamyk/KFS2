@@ -53,8 +53,7 @@ struct gdt_entry
 	uint16_t	base_low;
 	uint8_t		base_middle;
 	uint8_t		access;
-	uint8_t		limit_high;
-	uint8_t		flags;
+	uint8_t		limit_high_flags;
 	uint8_t		base_high;
 }	__attribute__((packed));	// Tells the compiler not to add padding between fields
 
@@ -72,7 +71,7 @@ extern struct gdt_entry	*gdt;		// 0: Null descriptor; 1: code segment; 2: data s
 extern struct gdt_ptr	gp;
 
 extern void 	_setGdt( void );
-void	gdt_install( struct gdt_ptr *gp, struct gdt_entry *gdt );
+void	gdt_install( void );
 
 #define HEX_BASE "0123456789ABCDEF"
 
@@ -86,9 +85,11 @@ size_t strlen(const char* str);
 void *memcpy(void *dst, const void *src, size_t n);
 void *memset(void *b, int c, size_t len);
 
+// cmd.c
 extern char cmd_buf[256];
 extern uint8_t cmd_buf_index;
 extern uint8_t cmd_complete;
+void	reset_cmd( void );
 void cmd();
 
 // cursor.c
@@ -101,10 +102,12 @@ void delete_char();
 void terminal_initialize(void);
 void terminal_setcolor(uint8_t color);
 void write(const char* data);
+void print_kernel_stack( void );
 uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg);
 void switch_screen(uint8_t screen);
 
 //input.c
 void keyboard_handler();
+unsigned char inb(unsigned short port);
 
 #endif

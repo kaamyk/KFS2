@@ -90,11 +90,11 @@ else -> Maximum segment size is (0x000FFFFF + 1) * 4KB == 4 GB
 When **Read** access is allowed, **Write** access is **never** allowed.  
 When **Write** access is allowed, **Read** access is **always** allowed.
 
-**DC** (Direction Bit / Conforming Bit):  
+**DC** (Direction Bit / Conforming Bit):   
 *if 0 -> segment grows up; else -> segment grows down*
 
 **Ex** (Executable):  
-*if 0 -> data; else -> exeuctable code*
+*if 0 -> data; else -> exeuctable code*  
 Tells the CPU if the bytes in the segments are unstruction to execute.
 
 **S** (Descriptor type):  
@@ -131,6 +131,20 @@ We will need:
 
 - update the registers to tell the CPU where is the new GDT.
 	- This will have to be done with assembly to modify the segment registers (see [CPU Registers x86_64](https://wiki.osdev.org/CPU_Registers_x86-64)).
+	
+```assembly
+	_reload_cs:
+		/*load a new gdt, our gdt with struct gp frohjgdt.h*/
+		/* 0x18 is the offset of data segment in our gdt */
+		mov $0x10, %ax
+		/* We modify all registers so they point to a valid data segment */
+		mov %ax, %ds
+		mov %ax, %es
+		mov %ax, %fs
+		mov %ax, %gs
+		mov $0x18, %ax
+		mov %ax, %ss
+```
 
 
 ## Sources

@@ -43,8 +43,15 @@ void keyboard_handler()
     {
         if ((scancode == 0x2A) || scancode == 0x36 )
             shift = 1;
-        else if (scancode == 0x0E)
-            delete_char();
+        else if ( scancode == 0x0E)
+        {
+        	if (cmd_buf_index == 0)
+         		return ;
+         
+         	delete_char();
+	        --cmd_buf_index;
+			cmd_buf[cmd_buf_index] = 0;
+        }
         else if (shift == 1)
 		{
             terminal_putchar(scancode_shift[scancode]);
@@ -54,12 +61,7 @@ void keyboard_handler()
         else
 		{
             terminal_putchar(scancode_to_ascii[scancode]);
-			if (scancode_to_ascii[scancode] == '\b')
-			{
-				--cmd_buf_index;
-				cmd_buf[cmd_buf_index] = 0;
-			}
-			else if (scancode_to_ascii[scancode] == '\n')
+			if (scancode_to_ascii[scancode] == '\n')
 			{
 				cmd_buf[cmd_buf_index] = 0;
 				cmd_complete = 1;

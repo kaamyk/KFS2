@@ -71,7 +71,8 @@ $(ISO) : $(BIN) $(GRUB_CFG)
 	@mkdir -p $(ISODIR)/grub
 	@cp $(BIN) $(ISODIR)
 	@cp $(GRUB_CFG) $(ISODIR)/grub
-	$(GRUB) -o $(ISO) isodir 
+	# $(GRUB) -o $(ISO) isodir 
+	$(GRUB) --compress=xz -o $(ISO) isodir
 	@echo "$(RED)[Done]$(DEF_COLOR)"
 
 clean : 

@@ -13,6 +13,11 @@ void switch_screen(uint8_t screen)
 {
     if (screen == actual_screen)
         return;
+    if (cmd_buf_index != 0)
+    {
+		write("\n$>");
+		reset_cmd();
+    }
     memcpy(vga_buffer[actual_screen], terminal_buffer, VGA_SIZE * sizeof(uint16_t));
     memcpy(terminal_buffer, vga_buffer[screen], VGA_SIZE * sizeof(uint16_t));
     row[actual_screen] = terminal_row;
@@ -21,6 +26,8 @@ void switch_screen(uint8_t screen)
     terminal_column = column[screen];
     update_cursor(terminal_column, terminal_row);
     actual_screen = screen;
+    if (terminal_column == 0 && terminal_row == 0)
+	    write("$>");
 }
 
 uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
@@ -105,6 +112,20 @@ void write(const char* data)
 	terminal_write(data, strlen(data));
 }
 
+void print_kernel_stack() {
+    uint32_t esp = 0;
+    asm volatile("mov %%esp, %0" : "=r"(esp));
+    write(">> Kernel Stack from ESP:\n");
+
+    for (int i = 0; i < 16; i++) {
+        uint32_t* addr = (uint32_t*)(esp + i * 4);
+        uint32_t value = *addr;
+        write_itohex((uint32_t)addr);
+        write(": ");
+        write_itohex(value);
+        write("\n");
+    }
+}
 void delete_char()
 {
 	if (terminal_column == 0)

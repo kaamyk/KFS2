@@ -75,24 +75,27 @@ _start:
 	C++ features such as global constructors and exceptions will require
 	runtime support to work as well.
 	*/
+	
+	call gdt_install
 
 	/* void _setGdt(uint16_t limit, uint32_t base); */
 	_setGdt:
-		movw $0x3f, gp + 2
-		movl $0x800, gp
+		movw $0x38, gp
+		movl $0x800, gp + 2
 		lgdt gp
 
 	_reload_segments:
 		ljmp $0x08, $_reload_cs	/*big jump -> Jump to another segment | 0x08 code segment offset in gdt*/
 	_reload_cs:
 		/*load a new gdt, our gdt with struct gp frohjgdt.h*/
-		/* 0x10 is the offset of data segment in our gdt */
+		/* 0x18 is the offset of data segment in our gdt */
 		mov $0x10, %ax
 		/* We modify all registers so they point to a valid data segment */
 		mov %ax, %ds
 		mov %ax, %es
 		mov %ax, %fs
 		mov %ax, %gs
+		mov $0x18, %ax
 		mov %ax, %ss
 	
 	/*

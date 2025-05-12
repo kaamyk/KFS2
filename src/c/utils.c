@@ -61,7 +61,7 @@ void	write_itohex(const uint32_t n)
 	terminal_putchar(HEX_BASE[((n >> 8) & 0x0F)]);
 	terminal_putchar(' ');
 	terminal_putchar(HEX_BASE[((n >> 4) & 0x0F)]);
-	terminal_putchar(HEX_BASE[(n & 0xF0)]);
+	terminal_putchar(HEX_BASE[(n & 0x0F)]);
 }
 
 void	write_btohex(const uint8_t b)
