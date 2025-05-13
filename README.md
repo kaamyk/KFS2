@@ -13,6 +13,7 @@
 	- [Update the GDTR](#update-the-gdtr)
 	- [Create the GDT and its entries](#create-the-gdt-and-its-entries)
 - [Bonus](#bonus)
+- [Sources](#sources)
 
 ## How it works ?
 - Run the ```make run``` command to compile the different files and launch the *Qemu* virtual machine.
