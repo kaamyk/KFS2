@@ -19,9 +19,6 @@ void	gdt_set_entry( int entry_index, uint32_t base, uint32_t limit, uint8_t acce
 
 void	gdt_install( void )
 {
-	gp.limit = ((sizeof(struct gdt_entry) * 7) - 1);
-	gp.base = (uint32_t)gdt;
-
 	// Set the Null descriptor
 	gdt_set_entry(0, 0, 0, 0, 0);
 
@@ -36,7 +33,5 @@ void	gdt_install( void )
 	gdt_set_entry(4, 0, 0xFFFFFFFF, 0xFA, 0xCF);
 	gdt_set_entry(5, 0, 0xFFFFFFFF, 0xF2, 0xCF);
 	gdt_set_entry(6, 0, 0xFFFFFFFF, 0xF2, 0xCF);
-
-	// _gdt_refresh();
 }
 

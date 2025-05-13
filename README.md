@@ -2,6 +2,7 @@
 2nd step of building our kernel from Scratch.
 
 ## Summary
+- [How it works](#how-it-works-)
 - [Objectives](#objectives)
 - [What is a GDT ?](#what-is-a-gdt)
 	- [General](#general)
@@ -9,6 +10,14 @@
 		- [Flags](#flags)
 		- [Access bytes](#access-byte)
 - [In our case](#in-our-case-how-to-use-it-)
+	- [Update the GDTR](#update-the-gdtr)
+	- [Create the GDT and its entries](#create-the-gdt-and-its-entries)
+- [Bonus](#bonus)
+
+## How it works ?
+- Run the ```make run``` command to compile the different files and launch the *Qemu* virtual machine.
+- In the machine, see [bonus](#bonus) to see the differents commands in the terminal.
+- You can change screens using keys F1 -> F10.
 
 ## Objectives
 > Create, fill and link a Global Descriptor Table (GDT)
@@ -40,9 +49,10 @@ Memory table used in protected mode, contains memory segment descriptors.
 Call gates are not used on most modern OS
 
 ### GDT Composition:
+> Note that all the following tables are reversed comparing to the real bit order for readability reasons.
 
 The GDT is loaded using the *lgdt* assembly instruction.<br>
-Actually, the *lgdt* instruction loads the LGDT's size and address in the **Global Descriptor Table Register** (GDTR).<br>
+Actually, the *lgdt* instruction loads the LGDT's size and address in the **Global Descriptor Table Register** (GDTR).  
 The GDTR is a **6 bytes** register that holds **2 fields**:
 - 2 bytes **limit** (size)
 - 4 bytes **base** (linear/physical address location)  
@@ -129,15 +139,56 @@ We will need:
 1. A user data segment
 1. A user stack
 
-- update the registers to tell the CPU where is the new GDT.
-	- This will have to be done with assembly to modify the segment registers (see [CPU Registers x86_64](https://wiki.osdev.org/CPU_Registers_x86-64)).
+Our *GDT pointer* will be represented by this structure:
+```C
+struct	gdt_ptr
+{
+	uint16_t	limit;
+	uint32_t	base;
+}	__attribute__((packed));		// Tells the compiler not to add padding between fields
+
+```
+	
+	
+Our *GDT entry* will be represented by this structure:  
+```C
+struct gdt_entry
+{
+	uint16_t	limit_low;
+	uint16_t	base_low;
+	uint8_t		base_middle;
+	uint8_t		access;
+	uint8_t		limit_high_flags;
+	uint8_t		base_high;
+}	__attribute__((packed));	// Tells the compiler not to add padding between fields
+```	
+> Note: ```limit_high``` (4 bits value) and ```flags``` (4 bits value) are joined in on unique 8 bits value: ```limit_high_flags```
+
+### Update the GDTR:
+- We move the value 0x38 (sizeof(gdt_entry) * nb entry) and 0x800 (base of the GDT) to the variable gp.  
+- Then, load the GDT with the instruction lgdt.
+```assembly
+_setGdt:
+	movw $0x38, gp
+	movl $0x800, gp + 2
+	lgdt gp
+```
+ 
+- Call our function gdt_install() that will load and create the GDT table in memory using global variable ```gp``` and ```gdt```
+- Jump (far jump) to the kernel code segment (ljmp jumps to another segment):
+	- ```0x8``` is the offset of the segment we are jumping to,
+	- ```$_reload_cs``` will be the offset inside the segment we are jumping to.
+- Updates all the register needed by the CPU (again see [sources](#sources) for more information about registers ):
+	- 0x10 describes the offset of the kernel data entry in our GDT.
+	- 0x18 describes the offset of the kernel stack entry in our GDT.
 	
 ```assembly
+	call gdt_install
+
+	_reload_segments:
+		ljmp $0x08, $_reload_cs
 	_reload_cs:
-		/*load a new gdt, our gdt with struct gp frohjgdt.h*/
-		/* 0x18 is the offset of data segment in our gdt */
 		mov $0x10, %ax
-		/* We modify all registers so they point to a valid data segment */
 		mov %ax, %ds
 		mov %ax, %es
 		mov %ax, %fs
@@ -145,6 +196,26 @@ We will need:
 		mov $0x18, %ax
 		mov %ax, %ss
 ```
+
+### Create the GDT and its entries:
+In the file **gdt.c** we can find the functions ```void	gdt_install( void );``` and  ```void	gdt_set_entry( int entry_index, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran );```.  
+The first one will call the second seven time, each time for an entry in the gdt, with the right flags to set.
+
+**And this is it for the mandatory part of our project** ... Yes really!  
+We are very consciensious person so ... **Let's do some bonuses !!**
+
+## Bonus
+> Let's create a shell like interface to build some usefull tools for our futur kernel.  
+
+In facts nothing really special to describe here. There are 5 commands: *halt*, *reboot*, *stack*, *clear* and *gdt*.  
+
+*halt*: Just pause the CPU. We will need to "hard" reboot the machine after that.  
+*reboot*: It just reboots the machine.  
+*stack*: print the stack content.  
+*clear*: clears the terminal.  
+*gdt*: prints informations about the gdt.
+
+We have been carefull to make the terminal behave with the multiple screens.
 
 
 ## Sources

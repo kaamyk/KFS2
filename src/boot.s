@@ -78,14 +78,13 @@ _start:
 	
 	call gdt_install
 
-	/* void _setGdt(uint16_t limit, uint32_t base); */
 	_setGdt:
 		movw $0x38, gp
 		movl $0x800, gp + 2
 		lgdt gp
 
 	_reload_segments:
-		ljmp $0x08, $_reload_cs	/*big jump -> Jump to another segment | 0x08 code segment offset in gdt*/
+		ljmp $0x08, $_reload_cs
 	_reload_cs:
 		/*load a new gdt, our gdt with struct gp frohjgdt.h*/
 		/* 0x18 is the offset of data segment in our gdt */

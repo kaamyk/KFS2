@@ -7,16 +7,6 @@ void	reset_cmd( void )
 	cmd_complete = 0;
 }
 
-// uint32_t	get_gdt_limit( const struct gdt_entry *entry )
-// {
-// 	return ( (entry->limit_low | (entry->limit_high << 16)) & 0x0FFFFFFF );
-// }
-
-// uintptr_t get_gdt_base( const struct gdt_entry *entry )
-// {
-// 	return ( entry->base_low | (entry->base_middle << 16) | (entry->base_high << 24) );
-// }
-
 void shell_halt( void )
 {
     asm volatile("cli; hlt");
@@ -79,7 +69,6 @@ void	cmd( void )
 {
 	if (cmd_buf_index == 0)
 	{
-		// terminal_putchar('\n');
 		cmd_complete = 0;
 		return;
 	}
